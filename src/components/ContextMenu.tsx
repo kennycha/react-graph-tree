@@ -254,16 +254,14 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     if (item.submenu && item.submenu.length > 0) {
       setHoveredItem(item.id);
 
-      // 메인 메뉴의 실제 너비를 계산해서 submenu 위치 결정
       const mainMenu = document.getElementById("canvas-context-menu");
       if (mainMenu) {
         const rect = mainMenu.getBoundingClientRect();
         setSubmenuPosition({
-          x: position.x + rect.width - 1, // 메인 메뉴 너비 - 1px (border 겹침)
+          x: position.x + rect.width - 1,
           y: position.y,
         });
       } else {
-        // fallback
         setSubmenuPosition({
           x: position.x + 160,
           y: position.y,
@@ -275,7 +273,6 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     }
   };
 
-  // 메뉴 전체 영역을 벗어날 때만 submenu 숨기기
   const handleMenuAreaLeave = () => {
     setHoveredItem(null);
     setSubmenuPosition(null);
@@ -324,7 +321,6 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
         })}
       </MenuContainer>
 
-      {/* Submenu */}
       {hoveredItem &&
         submenuPosition &&
         (() => {

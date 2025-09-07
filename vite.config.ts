@@ -5,13 +5,13 @@ import { resolve } from "path";
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   if (mode === "library") {
-    // 라이브러리 빌드 설정
+    // Library build configuration
     return {
       plugins: [react()],
       build: {
         lib: {
           entry: resolve(__dirname, "src/index.ts"),
-           name: "ReactGraphTree",
+          name: "ReactGraphTree",
           fileName: (format) => `index.${format === "es" ? "es." : ""}js`,
           formats: ["es", "cjs"],
         },
@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
     };
   }
 
-  // 개발/미리보기 설정 (기본)
+  // Development/preview configuration (default)
   return {
     plugins: [react()],
   };

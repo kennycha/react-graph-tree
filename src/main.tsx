@@ -4,7 +4,6 @@ import { GraphEditor, type GraphEditorConfig } from "./GraphEditor";
 import type { RawGraph } from "./types/graph";
 import "./index.css";
 
-// 예시 초기 그래프 데이터
 const initialGraph: RawGraph = {
   nodes: [
     {
@@ -93,7 +92,6 @@ const initialGraph: RawGraph = {
   },
 };
 
-// 개발 환경에서 테스트할 수 있도록 예시 설정
 const config: GraphEditorConfig = {
   initialGraph,
   nodeTypes: [

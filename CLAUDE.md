@@ -79,7 +79,8 @@ src/
 ├── components/          # React components
 │   ├── GraphCanvas.tsx    # Main canvas with pan/zoom
 │   ├── NodeCard.tsx       # Individual node component
-│   └── EdgeLayer.tsx      # SVG edge rendering
+│   ├── EdgeLayer.tsx      # SVG edge rendering
+│   └── ContextMenu.tsx    # Context menu components
 ├── stores/              # State management
 │   └── graphStore.ts      # Zustand store with callbacks
 ├── types/               # TypeScript definitions
@@ -90,6 +91,33 @@ src/
 │   └── graph.ts           # Graph manipulation utilities
 └── main.tsx             # React entry point
 ```
+
+## Core Architecture Patterns
+
+### State Management (graphStore.ts)
+- **Zustand Store**: Single centralized store with subscribeWithSelector middleware
+- **State Separation**: GraphState (core data), UIState (interactions), CallbackState (external hooks)
+- **Selective Subscriptions**: Fine-grained selectors prevent unnecessary re-renders
+- **Callback Integration**: External `onGraphChange`/`onNodeChange` callbacks for library integration
+
+### Component Architecture
+- **GraphEditor**: Main wrapper component handling configuration and callbacks
+- **GraphCanvas**: Canvas container with pan/zoom transforms
+- **NodeCard**: Individual node rendering with drag handling
+- **EdgeLayer**: SVG-based edge rendering layer
+- **ContextMenu**: Dynamic menu system (canvas/node specific)
+
+### Type System Architecture
+- **Raw vs Internal Types**: `RawNode`/`RawGraph` (external API) vs `Node`/`Graph` (internal)
+- **NodeTypeConfig**: Configuration-driven node type system
+- **Flexible NodeType**: String-based for dynamic node types
+- **Strict TypeScript**: All components use strict mode with comprehensive typing
+
+### Build System
+- **Dual Build**: Development (Vite dev server) + Library (rollup build)
+- **Library Mode**: ES/CJS modules with TypeScript declarations
+- **External Dependencies**: React, styled-components, zustand as peer dependencies
+- **TypeScript Config**: Separate configs for app (`tsconfig.app.json`) and library (`tsconfig.lib.json`)
 
 ## Library Status
 
@@ -107,3 +135,19 @@ src/
 import { GraphEditor } from "@kennycha/react-graph-tree";
 // See README.md for complete usage examples
 ```
+
+## Important Development Notes
+
+- **Connection Logic**: All connection validation happens in `utils/graph.ts:validateConnection`
+- **Coordinate System**: World coordinates (graph space) vs screen coordinates (DOM space) conversion in GraphEditor
+- **Drag Handling**: Zoom-aware drag calculations in NodeCard component
+- **Edge Rendering**: SVG curves calculated in EdgeLayer with proper port positioning
+- **Context Menus**: Dynamic menu generation based on GraphEditorConfig
+- **State Callbacks**: Async callback support with proper error handling
+
+## Testing & Quality
+
+- **Lint Command**: `pnpm lint` (ESLint with React hooks plugin)
+- **TypeScript**: Strict mode enabled with comprehensive type checking
+- **Build Verification**: `pnpm build:lib` creates distribution files
+- **Library Testing**: Use `pnpm example` to test in example project

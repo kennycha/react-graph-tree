@@ -64,7 +64,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button === 0) {
-        // Left mouse button
         setIsPanning(true);
         setPanStart({
           x: e.clientX - offset.x,
@@ -112,11 +111,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      // Calculate zoom (25% of original speed)
       const zoomFactor = e.deltaY > 0 ? 0.975 : 1.025;
-      const newZoom = Math.max(0.5, Math.min(2.0, zoom * zoomFactor)); // 최소 줌 0.5로 제한
+      const newZoom = Math.max(0.5, Math.min(2.0, zoom * zoomFactor));
 
-      // Calculate new offset to zoom towards mouse position
       const zoomRatio = newZoom / zoom;
       const newOffset = {
         x: mouseX - (mouseX - offset.x) * zoomRatio,

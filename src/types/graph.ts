@@ -1,4 +1,4 @@
-export type NodeType = string; // 동적 노드 타입 지원
+export type NodeType = string;
 
 export interface NodeTypeConfig {
   id: string;
@@ -17,8 +17,8 @@ export interface ContextMenuItem {
   label: string;
   onClick: (nodeId: string) => void;
   disabled?: boolean;
-  separator?: boolean; // 구분선 표시
-  submenu?: ContextMenuItem[]; // 서브메뉴 지원
+  separator?: boolean;
+  submenu?: ContextMenuItem[];
 }
 
 export interface CanvasContextMenuItem {
@@ -38,7 +38,6 @@ export interface RawNode {
   payload: Record<string, unknown>;
 }
 
-// 라이브러리 내부에서 사용하는 완전한 노드 데이터
 export interface Node extends RawNode {
   allowMultipleInputs: boolean;
   contextMenuItems?: ContextMenuItem[];
@@ -55,14 +54,12 @@ export interface ViewState {
   offset: Position;
 }
 
-// 사용자가 제공하는 원시 그래프 데이터
 export interface RawGraph {
   nodes: RawNode[];
   edges: Edge[];
   viewState: ViewState;
 }
 
-// 라이브러리 내부에서 사용하는 완전한 그래프 데이터
 export interface Graph {
   nodes: Node[];
   edges: Edge[];

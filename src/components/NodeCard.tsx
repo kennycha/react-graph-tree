@@ -1,15 +1,15 @@
 import React, { useCallback, useRef, useState } from "react";
 import styled from "styled-components";
 import type { Node, NodeType, Position } from "../types/graph";
-import { 
-  useSelectedNode, 
-  useViewState, 
+import {
+  useSelectedNode,
+  useViewState,
   useConnectionState,
   useSetSelectedNode,
   useShowContextMenu,
   useStartConnection,
   useCompleteConnection,
-  useMoveNode
+  useMoveNode,
 } from "../stores/graphStore";
 
 const NodeContainer = styled.div<{ $selected: boolean; $nodeType: NodeType }>`
@@ -32,12 +32,10 @@ const NodeContainer = styled.div<{ $selected: boolean; $nodeType: NodeType }>`
 
 const NodeHeader = styled.div<{ $nodeType: NodeType }>`
   background-color: ${(props) => {
-    // 동적 노드 타입 색상 지원
-    // theme.colors에서 노드 타입을 키로 사용해서 색상 찾기
     const color = (props.theme.colors as Record<string, string>)[
       props.$nodeType
     ];
-    return color || props.theme.colors.primary; // 색상이 없으면 기본 색상 사용
+    return color || props.theme.colors.primary;
   }};
   color: white;
   padding: ${(props) => props.theme.spacing.sm};
@@ -120,13 +118,9 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
       setSelectedNode(node.id);
 
       if (e.button === 0) {
-        // Left mouse button
         setIsDragging(true);
-        // 현재 zoom과 offset을 고려한 screen coordinates와 node position 차이를 계산
-        const screenX =
-          node.position.x * viewState.zoom + viewState.offset.x;
-        const screenY =
-          node.position.y * viewState.zoom + viewState.offset.y;
+        const screenX = node.position.x * viewState.zoom + viewState.offset.x;
+        const screenY = node.position.y * viewState.zoom + viewState.offset.y;
 
         setDragStart({
           x: e.clientX - screenX,
@@ -140,7 +134,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (isDragging) {
-        // Screen coordinates에서 dragStart offset을 빼고, zoom과 canvas offset을 고려하여 world coordinates로 변환
         const screenX = e.clientX - dragStart.x;
         const screenY = e.clientY - dragStart.y;
 
@@ -162,7 +155,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
   const handleInputPortMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Input ports don't start connections, they complete them
       if (connectionState.isConnecting && connectionState.sourcePort) {
         completeConnection(node.id);
       }
@@ -173,7 +165,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
   const handleOutputPortMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      // 노드의 world coordinates에서 출력 포트 위치 계산
       const nodeWidth = 200;
       const nodeHeight = 80;
       const position = {
@@ -191,7 +182,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
       e.preventDefault();
       e.stopPropagation();
 
-      // 노드에 컨텍스트 메뉴가 정의된 경우에만 표시
       if (node.contextMenuItems && node.contextMenuItems.length > 0) {
         showContextMenu("node", { x: e.clientX, y: e.clientY }, node.id);
       }
@@ -215,7 +205,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
     const payloadEntries = Object.entries(node.payload);
     if (payloadEntries.length === 0) return "No configuration";
 
-    // Show first few key-value pairs
     const summary = payloadEntries
       .slice(0, 2)
       .map(([key, value]) => {

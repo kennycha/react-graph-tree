@@ -1,5 +1,7 @@
 # @kennycha/react-graph-tree
 
+[![npm version](https://badge.fury.io/js/@kennycha%2Freact-graph-tree.svg)](https://www.npmjs.com/package/@kennycha/react-graph-tree)
+
 A visual graph editor React component for building node-based workflows.
 
 ## Installation

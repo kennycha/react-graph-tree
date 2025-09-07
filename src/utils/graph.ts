@@ -35,12 +35,10 @@ export const validateConnection = (
   targetNodeId: string,
   graph: Graph
 ): { valid: boolean; reason?: string } => {
-  // Can't connect to self
   if (sourceNodeId === targetNodeId) {
     return { valid: false, reason: "Cannot connect node to itself" };
   }
 
-  // Check if connection already exists
   const existingEdge = graph.edges.find(
     (edge) =>
       edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId
@@ -49,15 +47,12 @@ export const validateConnection = (
     return { valid: false, reason: "Connection already exists" };
   }
 
-  // Find target node to check multiple input restriction
   const targetNode = graph.nodes.find((node) => node.id === targetNodeId);
   if (!targetNode) {
     return { valid: false, reason: "Target node not found" };
   }
 
-  // Check if target node allows multiple inputs
   if (!targetNode.allowMultipleInputs) {
-    // Check if target already has an input connection
     const existingInputEdge = graph.edges.find(
       (edge) => edge.targetNodeId === targetNodeId
     );
@@ -69,7 +64,6 @@ export const validateConnection = (
     }
   }
 
-  // Check for cycles using DFS
   const wouldCreateCycle = (
     startNodeId: string,
     currentNodeId: string,

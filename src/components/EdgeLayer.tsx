@@ -1,6 +1,11 @@
 import React, { useMemo } from "react";
 import styled from "styled-components";
-import { useNodes, useEdges, useConnectionState, useRemoveEdgeById } from "../stores/graphStore";
+import {
+  useNodes,
+  useEdges,
+  useConnectionState,
+  useRemoveEdgeById,
+} from "../stores/graphStore";
 import type { Node } from "../types/graph";
 
 const SVGContainer = styled.svg`
@@ -9,7 +14,7 @@ const SVGContainer = styled.svg`
   left: 0;
   pointer-events: none;
   z-index: 1;
-  overflow: visible; /* 중요: SVG가 잘리지 않도록 */
+  overflow: visible;
 `;
 
 const EdgePath = styled.path<{ $isActive?: boolean }>`
@@ -47,10 +52,8 @@ const createCurvedPath = (
   x2: number,
   y2: number
 ): string => {
-  // ComfyUI style curved connection
   const dx = x2 - x1;
 
-  // Control points for smooth curve
   const controlPointOffset = Math.max(Math.abs(dx) * 0.5, 100);
   const cp1x = x1 + controlPointOffset;
   const cp1y = y1;
@@ -83,9 +86,8 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({ width, height }) => {
   const connectionState = useConnectionState();
   const removeEdgeById = useRemoveEdgeById();
 
-  // 큰 고정 크기 SVG 사용 - 간단하고 안전한 방법
   const svgSize = {
-    width: Math.max(width * 3, 3000), // 최소 3000px 또는 캔버스의 3배
+    width: Math.max(width * 3, 3000),
     height: Math.max(height * 3, 3000),
   };
 
@@ -131,7 +133,6 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({ width, height }) => {
 
     const sourcePos = getNodePortPosition(sourceNode, "output");
 
-    // EdgeLayer는 CSS transform 안에 있으므로 currentPosition을 그대로 사용
     return createCurvedPath(
       sourcePos.x,
       sourcePos.y,
@@ -143,14 +144,12 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({ width, height }) => {
   const handleEdgeClick = (edgeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (e.detail === 2) {
-      // Double click
       removeEdgeById(edgeId);
     }
   };
 
   return (
     <SVGContainer width={svgSize.width} height={svgSize.height}>
-      {/* Existing edges */}
       {edgePaths.map(({ edge, path }) => (
         <EdgePath
           key={edge.id}
@@ -159,7 +158,6 @@ export const EdgeLayer: React.FC<EdgeLayerProps> = ({ width, height }) => {
         />
       ))}
 
-      {/* Connection preview */}
       {connectionPreviewPath && <ConnectionPreview d={connectionPreviewPath} />}
     </SVGContainer>
   );

@@ -99,7 +99,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     y: number;
   } | null>(null);
 
-  // 노드 타입별 설정을 맵으로 생성
   const nodeTypeConfigMap = useMemo(() => {
     const map = new Map<string, NodeTypeConfig>();
     config.nodeTypes.forEach((nodeType) => {
@@ -108,12 +107,10 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     return map;
   }, [config.nodeTypes]);
 
-  // nodeTypeConfigMap을 스토어에 설정
   useEffect(() => {
     setNodeTypeConfigMap(nodeTypeConfigMap);
   }, [nodeTypeConfigMap, setNodeTypeConfigMap]);
 
-  // 기본 노드 컨텍스트 메뉴 아이템들
   const getNodeContextMenuItems = useCallback((): ContextMenuItem[] => {
     if (config.defaultNodeContextMenuItems) {
       return config.defaultNodeContextMenuItems;
@@ -122,7 +119,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     return [
       {
         id: "edit-title",
-        label: "제목 편집",
+        label: "Edit Title",
         onClick: async (id: string) => {
           if (config.onNodeChange) {
             const result = config.onNodeChange(id, "title");
@@ -130,10 +127,9 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
               await result;
             }
           } else {
-            // 기본 fallback
             const node = nodes.find((n) => n.id === id);
             if (node) {
-              const newTitle = prompt("새 제목을 입력하세요:", node.title);
+              const newTitle = prompt("Enter new title:", node.title);
               if (newTitle !== null && newTitle.trim() !== "") {
                 updateNode(id, { title: newTitle.trim() });
               }
@@ -143,7 +139,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       },
       {
         id: "edit-payload",
-        label: "속성 편집",
+        label: "Edit Properties",
         onClick: async (id: string) => {
           if (config.onNodeChange) {
             const node = nodes.find((n) => n.id === id);
@@ -152,12 +148,11 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
               await result;
             }
           } else {
-            // 기본 fallback
             const node = nodes.find((n) => n.id === id);
             if (node) {
               const payloadStr = JSON.stringify(node.payload, null, 2);
               const newPayloadStr = prompt(
-                "속성을 JSON 형태로 편집하세요:",
+                "Edit properties in JSON format:",
                 payloadStr
               );
               if (newPayloadStr !== null) {
@@ -166,7 +161,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
                   updateNode(id, { payload: newPayload });
                 } catch (error) {
                   console.error(error);
-                  alert("잘못된 JSON 형식입니다.");
+                  alert("Invalid JSON format.");
                 }
               }
             }
@@ -181,7 +176,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       },
       {
         id: "duplicate",
-        label: "복제",
+        label: "Duplicate",
         onClick: (id: string) => duplicateNode(id),
       },
       {
@@ -192,7 +187,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       },
       {
         id: "disconnect",
-        label: "모든 연결 끊기",
+        label: "Disconnect All",
         onClick: (id: string) => disconnectAllFromNode(id),
       },
       {
@@ -203,7 +198,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       },
       {
         id: "delete",
-        label: "삭제",
+        label: "Delete",
         onClick: (id: string) => removeNodeById(id),
       },
     ];
@@ -216,22 +211,18 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     removeNodeById,
   ]);
 
-  // 캔버스 컨텍스트 메뉴 아이템들
   const getCanvasContextMenuItems = useCallback((): CanvasContextMenuItem[] => {
     if (config.canvasContextMenuItems) {
       return config.canvasContextMenuItems;
     }
 
-    // 노드 타입들을 submenu로 구성
     const nodeTypeSubmenu: CanvasContextMenuItem[] = config.nodeTypes.map(
       (nodeType) => ({
         id: `add-${nodeType.id}`,
         label: nodeType.label,
         onClick: (position) => {
-          // config의 nodeType 정보를 사용해서 노드 생성
           addNode(nodeType.id, position, {
             title: nodeType.label,
-            // 노드 타입의 기본 설정을 사용하되, undefined인 경우 생략하여 런타임에 결정하도록 함
             ...(nodeType.allowMultipleInputs !== undefined && {
               allowMultipleInputs: nodeType.allowMultipleInputs,
             }),
@@ -243,7 +234,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     const zoomItems: CanvasContextMenuItem[] = [
       {
         id: "zoom-in",
-        label: "줌 인",
+        label: "Zoom In",
         onClick: () => {
           const currentZoom = viewState.zoom;
           setZoom(Math.min(2.0, currentZoom * 1.25));
@@ -251,7 +242,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       },
       {
         id: "zoom-out",
-        label: "줌 아웃",
+        label: "Zoom Out",
         onClick: () => {
           const currentZoom = viewState.zoom;
           setZoom(Math.max(0.5, currentZoom * 0.8));
@@ -267,7 +258,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     return [
       {
         id: "add-node",
-        label: "노드 추가",
+        label: "Add Node",
         submenu: nodeTypeSubmenu,
       },
       {
@@ -285,7 +276,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     viewState.zoom,
   ]);
 
-  // 노드 타입별 색상 테마 생성
   const createNodeTypeTheme = useCallback(() => {
     const nodeTypeColors: Record<string, string> = {};
     config.nodeTypes.forEach((nodeType) => {
@@ -298,17 +288,14 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       colors: {
         ...defaultTheme.colors,
         ...config.theme?.colors,
-        // 동적으로 생성된 노드 타입 색상들 추가
         ...nodeTypeColors,
       },
     };
   }, [config.nodeTypes, config.theme]);
 
-  // Graph change callback을 ref로 저장하여 무한 루프 방지
   const onGraphChangeRef = useRef(config.onGraphChange);
   const onNodeChangeRef = useRef(config.onNodeChange);
 
-  // Initialize graph with provided initial data
   useEffect(() => {
     if (config.initialGraph) {
       const convertedNodes: Node[] = config.initialGraph.nodes.map(
@@ -317,7 +304,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
             ...rawNode,
             allowMultipleInputs:
               nodeTypeConfigMap.get(rawNode.type)?.allowMultipleInputs ?? false,
-            contextMenuItems: undefined, // 초기화 시에는 undefined로 설정
+            contextMenuItems: undefined,
           };
         }
       );
@@ -331,7 +318,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     }
   }, [config.initialGraph, setInitialGraph, nodeTypeConfigMap]);
 
-  // 컨테이너 크기 감지
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -351,7 +337,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
   }, [config.onGraphChange, config.onNodeChange]);
 
   useEffect(() => {
-    // ref를 통해 콜백 설정
     setOnGraphChange((graph, node, edges) => {
       if (onGraphChangeRef.current) {
         const result = onGraphChangeRef.current(graph, node, edges);
@@ -375,14 +360,11 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     });
   }, [setOnGraphChange, setOnNodeChange]);
 
-  // 마우스 좌표를 월드 좌표로 변환하는 헬퍼 함수
   const screenToWorldPosition = useCallback(
     (screenX: number, screenY: number) => {
       if (!containerRef.current) return null;
       const rect = containerRef.current.getBoundingClientRect();
 
-      // CSS transform: scale() translate()이므로
-      // offset은 이미 zoom의 영향을 받음
       const canvasX = screenX - rect.left;
       const canvasY = screenY - rect.top;
 
@@ -394,10 +376,8 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     [viewState]
   );
 
-  // Handle mouse move for connection preview
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      // 현재 마우스 화면 위치 저장
       setCurrentMousePosition({ x: e.clientX, y: e.clientY });
 
       if (connectionState.isConnecting) {
@@ -414,7 +394,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     ]
   );
 
-  // 줌이 변경될 때 연결 미리보기 업데이트
   useEffect(() => {
     if (connectionState.isConnecting && currentMousePosition) {
       const worldPosition = screenToWorldPosition(
@@ -434,7 +413,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     updateConnectionPosition,
   ]);
 
-  // Handle escape key to cancel connection
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape" && connectionState.isConnecting) {
@@ -454,11 +432,9 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     };
   }, [handleMouseMove, handleKeyDown]);
 
-  // Handle context menu close
   useEffect(() => {
     if (contextMenuState.isVisible) {
       const handleClickOutside = (e: Event) => {
-        // contextmenu 이벤트는 무시 (우클릭으로 메뉴를 여는 것과 충돌 방지)
         if (e.type === "contextmenu") {
           return;
         }
@@ -473,12 +449,10 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     }
   }, [contextMenuState.isVisible, hideContextMenu]);
 
-  // Handle right-click context menu
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
 
-      // Convert screen coordinates to canvas coordinates
       const target = e.currentTarget;
       if (!(target instanceof HTMLElement)) return;
       const canvasRect = target.getBoundingClientRect();

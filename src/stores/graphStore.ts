@@ -20,19 +20,16 @@ import {
   updateNodePosition,
 } from "../utils/graph";
 
-// 그래프 핵심 상태 (노드, 엣지, 뷰)
 interface GraphState {
   graph: Graph;
 }
 
-// UI 상호작용 상태
 interface UIState {
   selectedNodeId: string | null;
   connectionState: ConnectionState;
   contextMenuState: ContextMenuState;
 }
 
-// 외부 통합 콜백
 interface CallbackState {
   nodeTypeConfigMap?: Map<string, NodeTypeConfig>;
   onNodeChange?: (
@@ -47,7 +44,6 @@ interface CallbackState {
   ) => void | Promise<void>;
 }
 
-// 그래프 관련 액션들
 interface GraphActions {
   setInitialGraph: (graph: Graph) => void;
   addNode: (
@@ -67,7 +63,6 @@ interface GraphActions {
   updateViewState: (updates: Partial<Graph["viewState"]>) => void;
 }
 
-// UI 관련 액션들
 interface UIActions {
   setSelectedNode: (nodeId: string | null) => void;
   startConnection: (sourceNodeId: string, position: Position) => void;
@@ -83,7 +78,6 @@ interface UIActions {
   hideContextMenu: () => void;
 }
 
-// 콜백 관련 액션들
 interface CallbackActions {
   setNodeTypeConfigMap: (configMap: Map<string, NodeTypeConfig>) => void;
   setOnNodeChange: (
@@ -102,7 +96,6 @@ interface CallbackActions {
   ) => void;
 }
 
-// 전체 스토어 타입
 type GraphStore = GraphState &
   UIState &
   CallbackState &
@@ -179,7 +172,7 @@ export const useGraphStore = create<GraphStore>()(
       addNode: (type, position, options) => {
         const state = get();
 
-        // allowMultipleInputs 결정: 옵션 → 노드 타입 설정 → 기본값 false
+        // Determine allowMultipleInputs: options → node type config → default false
         let allowMultipleInputs = false;
         if (state.nodeTypeConfigMap) {
           const nodeTypeConfig = state.nodeTypeConfigMap.get(type);
@@ -267,7 +260,7 @@ export const useGraphStore = create<GraphStore>()(
         );
 
         newNode.payload = { ...originalNode.payload };
-        newNode.title = originalNode.title + " (복사본)";
+        newNode.title = originalNode.title + " (copy)";
 
         const newGraph = {
           ...state.graph,
@@ -431,7 +424,7 @@ export const useGraphStore = create<GraphStore>()(
   })
 );
 
-// 상태 선택자들 - 필요한 부분만 선택적으로 구독
+// State selectors - subscribe only to needed parts
 export const useGraph = () => useGraphStore((state) => state.graph);
 export const useNodes = () => useGraphStore((state) => state.graph.nodes);
 export const useEdges = () => useGraphStore((state) => state.graph.edges);
@@ -449,13 +442,13 @@ export const useConnectionState = () =>
 export const useContextMenuState = () =>
   useGraphStore((state) => state.contextMenuState);
 
-// 특정 노드만 구독하는 선택자
+// Selector that subscribes to a specific node only
 export const useNode = (nodeId: string) =>
   useGraphStore((state) =>
     state.graph.nodes.find((node) => node.id === nodeId)
   );
 
-// 특정 노드와 연결된 엣지들만 구독
+// Subscribe to edges connected to a specific node only
 export const useNodeEdges = (nodeId: string) =>
   useGraphStore((state) =>
     state.graph.edges.filter(
@@ -463,7 +456,7 @@ export const useNodeEdges = (nodeId: string) =>
     )
   );
 
-// 액션들만 분리해서 사용 - 안정적인 참조를 위해 개별 선택자 사용
+// Use actions separately - individual selectors for stable references
 export const useSetInitialGraph = () =>
   useGraphStore((state) => state.setInitialGraph);
 export const useAddNode = () => useGraphStore((state) => state.addNode);
