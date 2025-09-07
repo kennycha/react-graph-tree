@@ -4,6 +4,10 @@
 
 A visual graph editor React component for building node-based workflows.
 
+## Demo
+
+**[Live Demo](https://kennycha.github.io/react-graph-tree-sample/)**
+
 ## Installation
 
 ```bash
