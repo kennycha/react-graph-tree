@@ -1,20 +1,28 @@
-import type { Graph, Node, Edge } from '../types/graph';
+import type { Graph, Node, Edge } from "../types/graph";
 
 export const generateId = (): string => {
-  return Math.random().toString(36).substr(2, 9);
+  return Math.random().toString(36).slice(2, 9);
 };
 
-export const createNode = (type: Node['type'], position: { x: number; y: number }): Node => {
+export const createNode = (
+  type: Node["type"],
+  position: { x: number; y: number },
+  allowMultipleInputs: boolean
+): Node => {
   return {
     id: generateId(),
     type,
     title: `${type} Node`,
     position,
     payload: {},
+    allowMultipleInputs,
   };
 };
 
-export const createEdge = (sourceNodeId: string, targetNodeId: string): Edge => {
+export const createEdge = (
+  sourceNodeId: string,
+  targetNodeId: string
+): Edge => {
   return {
     id: generateId(),
     sourceNodeId,
@@ -29,41 +37,53 @@ export const validateConnection = (
 ): { valid: boolean; reason?: string } => {
   // Can't connect to self
   if (sourceNodeId === targetNodeId) {
-    return { valid: false, reason: 'Cannot connect node to itself' };
+    return { valid: false, reason: "Cannot connect node to itself" };
   }
 
   // Check if connection already exists
-  const existingEdge = graph.edges.find(edge => 
-    edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId
+  const existingEdge = graph.edges.find(
+    (edge) =>
+      edge.sourceNodeId === sourceNodeId && edge.targetNodeId === targetNodeId
   );
   if (existingEdge) {
-    return { valid: false, reason: 'Connection already exists' };
+    return { valid: false, reason: "Connection already exists" };
   }
 
   // Find target node to check multiple input restriction
-  const targetNode = graph.nodes.find(node => node.id === targetNodeId);
+  const targetNode = graph.nodes.find((node) => node.id === targetNodeId);
   if (!targetNode) {
-    return { valid: false, reason: 'Target node not found' };
+    return { valid: false, reason: "Target node not found" };
   }
 
   // Check if target node allows multiple inputs
   if (!targetNode.allowMultipleInputs) {
     // Check if target already has an input connection
-    const existingInputEdge = graph.edges.find(edge => edge.targetNodeId === targetNodeId);
+    const existingInputEdge = graph.edges.find(
+      (edge) => edge.targetNodeId === targetNodeId
+    );
     if (existingInputEdge) {
-      return { valid: false, reason: 'This node can only have one input connection' };
+      return {
+        valid: false,
+        reason: "This node can only have one input connection",
+      };
     }
   }
 
   // Check for cycles using DFS
-  const wouldCreateCycle = (startNodeId: string, currentNodeId: string, visited: Set<string>): boolean => {
+  const wouldCreateCycle = (
+    startNodeId: string,
+    currentNodeId: string,
+    visited: Set<string>
+  ): boolean => {
     if (visited.has(currentNodeId)) {
       return currentNodeId === startNodeId;
     }
 
     visited.add(currentNodeId);
 
-    const outgoingEdges = graph.edges.filter(edge => edge.sourceNodeId === currentNodeId);
+    const outgoingEdges = graph.edges.filter(
+      (edge) => edge.sourceNodeId === currentNodeId
+    );
     for (const edge of outgoingEdges) {
       if (wouldCreateCycle(startNodeId, edge.targetNodeId, new Set(visited))) {
         return true;
@@ -74,7 +94,7 @@ export const validateConnection = (
   };
 
   if (wouldCreateCycle(targetNodeId, sourceNodeId, new Set())) {
-    return { valid: false, reason: 'Connection would create a cycle' };
+    return { valid: false, reason: "Connection would create a cycle" };
   }
 
   return { valid: true };
@@ -83,9 +103,9 @@ export const validateConnection = (
 export const removeNode = (nodeId: string, graph: Graph): Graph => {
   return {
     ...graph,
-    nodes: graph.nodes.filter(node => node.id !== nodeId),
-    edges: graph.edges.filter(edge => 
-      edge.sourceNodeId !== nodeId && edge.targetNodeId !== nodeId
+    nodes: graph.nodes.filter((node) => node.id !== nodeId),
+    edges: graph.edges.filter(
+      (edge) => edge.sourceNodeId !== nodeId && edge.targetNodeId !== nodeId
     ),
   };
 };
@@ -93,14 +113,18 @@ export const removeNode = (nodeId: string, graph: Graph): Graph => {
 export const removeEdge = (edgeId: string, graph: Graph): Graph => {
   return {
     ...graph,
-    edges: graph.edges.filter(edge => edge.id !== edgeId),
+    edges: graph.edges.filter((edge) => edge.id !== edgeId),
   };
 };
 
-export const updateNodePosition = (nodeId: string, position: { x: number; y: number }, graph: Graph): Graph => {
+export const updateNodePosition = (
+  nodeId: string,
+  position: { x: number; y: number },
+  graph: Graph
+): Graph => {
   return {
     ...graph,
-    nodes: graph.nodes.map(node => 
+    nodes: graph.nodes.map((node) =>
       node.id === nodeId ? { ...node, position } : node
     ),
   };

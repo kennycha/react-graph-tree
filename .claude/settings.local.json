@@ -3,7 +3,10 @@
     "allow": [
       "Bash(pnpm add:*)",
       "Bash(mkdir:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Read(/var/folders/zb/gkgrdls52p5459lynfpgkdfc0000gn/T/TemporaryItems/NSIRD_screencaptureui_QR7Yy3/**)",
+      "Read(/var/folders/zb/gkgrdls52p5459lynfpgkdfc0000gn/T/TemporaryItems/NSIRD_screencaptureui_C8UwdF/**)",
+      "Read(/var/folders/zb/gkgrdls52p5459lynfpgkdfc0000gn/T/TemporaryItems/NSIRD_screencaptureui_981OW8/**)"
     ],
     "deny": [],
     "ask": []

@@ -1,368 +1,506 @@
-import { create } from 'zustand';
-import type { Graph, Node, Position, ConnectionState, NodeType } from '../types/graph';
-import { 
-  createNode, 
-  createEdge, 
-  validateConnection, 
-  removeNode, 
-  removeEdge, 
-  updateNodePosition 
-} from '../utils/graph';
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
+import type {
+  Graph,
+  Node,
+  Edge,
+  Position,
+  ConnectionState,
+  NodeType,
+  ContextMenuState,
+  RawGraph,
+  NodeTypeConfig,
+} from "../types/graph";
+import {
+  createNode,
+  createEdge,
+  validateConnection,
+  removeNode,
+  removeEdge,
+  updateNodePosition,
+} from "../utils/graph";
 
-interface GraphStore {
-  // State
+// 그래프 핵심 상태 (노드, 엣지, 뷰)
+interface GraphState {
   graph: Graph;
+}
+
+// UI 상호작용 상태
+interface UIState {
   selectedNodeId: string | null;
   connectionState: ConnectionState;
-  
-  // Callbacks
-  onConnect?: (sourceNodeId: string, targetNodeId: string, edgeId: string) => void;
-  onDisconnect?: (sourceNodeId: string, targetNodeId: string, edgeId: string) => void;
-  onNodeAdd?: (node: Node) => void;
-  onNodeRemove?: (nodeId: string) => void;
-  onNodeUpdate?: (nodeId: string, updates: Partial<Node>) => void;
-  
-  // Actions
-  addNode: (type: NodeType, position: Position) => void;
+  contextMenuState: ContextMenuState;
+}
+
+// 외부 통합 콜백
+interface CallbackState {
+  nodeTypeConfigMap?: Map<string, NodeTypeConfig>;
+  onNodeChange?: (
+    nodeId: string,
+    changeType: "title" | "payload",
+    data?: unknown
+  ) => void | Promise<void>;
+  onGraphChange?: (
+    graph: RawGraph,
+    node?: Node,
+    edges?: Edge[]
+  ) => void | Promise<void>;
+}
+
+// 그래프 관련 액션들
+interface GraphActions {
+  setInitialGraph: (graph: Graph) => void;
+  addNode: (
+    type: NodeType,
+    position: Position,
+    options?: { title?: string }
+  ) => void;
   removeNodeById: (nodeId: string) => void;
   updateNode: (nodeId: string, updates: Partial<Node>) => void;
   moveNode: (nodeId: string, position: Position) => void;
-  
+  duplicateNode: (nodeId: string) => void;
+  disconnectAllFromNode: (nodeId: string) => void;
   addEdge: (sourceNodeId: string, targetNodeId: string) => boolean;
   removeEdgeById: (edgeId: string) => void;
-  
+  setZoom: (zoom: number) => void;
+  setOffset: (offset: Position) => void;
+  updateViewState: (updates: Partial<Graph["viewState"]>) => void;
+}
+
+// UI 관련 액션들
+interface UIActions {
   setSelectedNode: (nodeId: string | null) => void;
-  
   startConnection: (sourceNodeId: string, position: Position) => void;
   updateConnectionPosition: (position: Position) => void;
   completeConnection: (targetNodeId: string) => boolean;
   cancelConnection: () => void;
-  
-  setZoom: (zoom: number) => void;
-  setOffset: (offset: Position) => void;
-  updateViewState: (updates: Partial<Graph['viewState']>) => void;
-  
-  // Callback setters
-  setOnConnect: (callback: (sourceNodeId: string, targetNodeId: string, edgeId: string) => void) => void;
-  setOnDisconnect: (callback: (sourceNodeId: string, targetNodeId: string, edgeId: string) => void) => void;
-  setOnNodeAdd: (callback: (node: Node) => void) => void;
-  setOnNodeRemove: (callback: (nodeId: string) => void) => void;
-  setOnNodeUpdate: (callback: (nodeId: string, updates: Partial<Node>) => void) => void;
+  showContextMenu: (
+    type: "canvas" | "node",
+    position: { x: number; y: number },
+    nodeId?: string,
+    canvasPosition?: Position
+  ) => void;
+  hideContextMenu: () => void;
 }
 
-const initialGraph: Graph = {
-  nodes: [
-    {
-      id: 'detector-1',
-      type: 'Detector',
-      title: 'Object Detector',
-      position: { x: 100, y: 100 },
-      payload: {
-        model: 'yolo-v8',
-        confidence: 0.7,
-        classes: ['person', 'car', 'truck']
-      },
-      allowMultipleInputs: false // 1:N only
-    },
-    {
-      id: 'tracker-1',
-      type: 'Tracker',
-      title: 'Multi-Object Tracker',
-      position: { x: 400, y: 100 },
-      payload: {
-        algorithm: 'deep-sort',
-        max_age: 30,
-        n_init: 3
-      },
-      allowMultipleInputs: false // 1:N only
-    },
-    {
-      id: 'ga-1',
-      type: 'G/A',
-      title: 'Gait Analysis',
-      position: { x: 700, y: 50 },
-      payload: {
-        features: ['step_length', 'cadence', 'stride_width'],
-        window_size: 60
-      },
-      allowMultipleInputs: false // 1:N only
-    },
-    {
-      id: 'sf-1',
-      type: 'SF',
-      title: 'Safety Filter',
-      position: { x: 700, y: 200 },
-      payload: {
-        safety_zones: ['entrance', 'exit', 'danger_zone'],
-        alert_threshold: 0.8
-      },
-      allowMultipleInputs: false // 1:N only
-    },
-    {
-      id: 'event-1',
-      type: 'Event',
-      title: 'Event Generator',
-      position: { x: 1000, y: 125 },
-      payload: {
-        event_types: ['fall_detection', 'intrusion', 'loitering'],
-        output_format: 'json'
-      },
-      allowMultipleInputs: true // N:M 허용! 여러 소스로부터 이벤트 수집 가능
-    },
-    // 추가 테스트 노드들
-    {
-      id: 'detector-2',
-      type: 'Detector',
-      title: 'Face Detector',
-      position: { x: 100, y: 300 },
-      payload: {
-        model: 'retinaface',
-        min_confidence: 0.8,
-        detect_landmarks: true
-      },
-      allowMultipleInputs: false
-    },
-    {
-      id: 'tracker-2',
-      type: 'Tracker',
-      title: 'Face Tracker',
-      position: { x: 400, y: 300 },
-      payload: {
-        algorithm: 'kcf',
-        update_interval: 5
-      },
-      allowMultipleInputs: false
-    },
-    {
-      id: 'ga-2',
-      type: 'G/A',
-      title: 'Emotion Analysis',
-      position: { x: 700, y: 350 },
-      payload: {
-        emotions: ['happy', 'sad', 'angry', 'surprised'],
-        confidence_threshold: 0.7
-      },
-      allowMultipleInputs: false
-    },
-    {
-      id: 'sf-2',
-      type: 'SF',
-      title: 'Privacy Filter',
-      position: { x: 400, y: 500 },
-      payload: {
-        blur_faces: true,
-        anonymize_data: true,
-        retention_days: 30
-      },
-      allowMultipleInputs: true // 여러 소스의 데이터를 필터링할 수 있음
-    },
-    {
-      id: 'event-2',
-      type: 'Event',
-      title: 'Alert System',
-      position: { x: 1000, y: 350 },
-      payload: {
-        alert_types: ['security_breach', 'unauthorized_access'],
-        notification_channels: ['email', 'sms', 'webhook']
-      },
-      allowMultipleInputs: true
-    }
-  ],
-  edges: [
-    // 첫 번째 파이프라인: Object Detection → Tracking → Analysis/Safety → Event
-    {
-      id: 'edge-1',
-      sourceNodeId: 'detector-1',
-      targetNodeId: 'tracker-1'
-    },
-    {
-      id: 'edge-2',
-      sourceNodeId: 'tracker-1',
-      targetNodeId: 'ga-1'
-    },
-    {
-      id: 'edge-3',
-      sourceNodeId: 'tracker-1',
-      targetNodeId: 'sf-1'
-    },
-    {
-      id: 'edge-4',
-      sourceNodeId: 'ga-1',
-      targetNodeId: 'event-1'
-    },
-    {
-      id: 'edge-5',
-      sourceNodeId: 'sf-1',
-      targetNodeId: 'event-1'
-    },
-    // 두 번째 파이프라인: Face Detection → Face Tracking → Emotion Analysis
-    {
-      id: 'edge-6',
-      sourceNodeId: 'detector-2',
-      targetNodeId: 'tracker-2'
-    },
-    {
-      id: 'edge-7',
-      sourceNodeId: 'tracker-2',
-      targetNodeId: 'ga-2'
-    }
-    // 나머지는 수동으로 연결 테스트 가능
-    // - Privacy Filter는 allowMultipleInputs: true이므로 여러 입력 가능
-    // - Alert System도 allowMultipleInputs: true이므로 여러 입력 가능
-  ],
+// 콜백 관련 액션들
+interface CallbackActions {
+  setNodeTypeConfigMap: (configMap: Map<string, NodeTypeConfig>) => void;
+  setOnNodeChange: (
+    callback: (
+      nodeId: string,
+      changeType: "title" | "payload",
+      data?: unknown
+    ) => void | Promise<void>
+  ) => void;
+  setOnGraphChange: (
+    callback: (
+      graph: RawGraph,
+      node?: Node,
+      edges?: Edge[]
+    ) => void | Promise<void>
+  ) => void;
+}
+
+// 전체 스토어 타입
+type GraphStore = GraphState &
+  UIState &
+  CallbackState &
+  GraphActions &
+  UIActions &
+  CallbackActions;
+
+const defaultInitialGraph: Graph = {
+  nodes: [],
+  edges: [],
   viewState: {
     zoom: 1,
-    offset: { x: 0, y: 0 }
-  }
+    offset: { x: 0, y: 0 },
+  },
 };
 
-export const useGraphStore = create<GraphStore>((set, get) => ({
-  // Initial state
-  graph: initialGraph,
-  selectedNodeId: null,
-  connectionState: {
-    isConnecting: false
-  },
+export const useGraphStore = create<GraphStore>()(
+  subscribeWithSelector((set, get) => {
+    // Helper function to convert Graph to RawGraph
+    const convertGraphToRawGraph = (graph: Graph): RawGraph => {
+      const rawNodes = graph.nodes.map(({ ...rawNode }) => rawNode);
+      return {
+        ...graph,
+        nodes: rawNodes,
+      };
+    };
 
-  // Actions
-  addNode: (type, position) => {
-    const newNode = createNode(type, position);
-    set((state) => ({
-      graph: {
-        ...state.graph,
-        nodes: [...state.graph.nodes, newNode]
+    // Helper function to call onGraphChange callback
+    const callGraphChangeCallback = (
+      newGraph: Graph,
+      node?: Node,
+      edges?: Edge[]
+    ) => {
+      const state = get();
+      if (state.onGraphChange) {
+        const rawGraph = convertGraphToRawGraph(newGraph);
+        const result = state.onGraphChange(rawGraph, node, edges);
+        if (result instanceof Promise) {
+          result.catch((error) => {
+            console.error("Graph change callback error:", error);
+          });
+        }
       }
-    }));
-    
-    const state = get();
-    state.onNodeAdd?.(newNode);
-  },
+    };
 
-  removeNodeById: (nodeId) => {
-    set((state) => ({
-      graph: removeNode(nodeId, state.graph),
-      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId
-    }));
-    
-    const state = get();
-    state.onNodeRemove?.(nodeId);
-  },
+    return {
+      // Initial state
+      graph: defaultInitialGraph,
+      selectedNodeId: null,
+      connectionState: {
+        isConnecting: false,
+      },
+      contextMenuState: {
+        isVisible: false,
+        position: { x: 0, y: 0 },
+        type: "canvas",
+      },
+      nodeTypeConfigMap: undefined,
 
-  updateNode: (nodeId, updates) => {
-    set((state) => ({
-      graph: {
-        ...state.graph,
-        nodes: state.graph.nodes.map(node =>
-          node.id === nodeId ? { ...node, ...updates } : node
-        )
-      }
-    }));
-    
-    const state = get();
-    state.onNodeUpdate?.(nodeId, updates);
-  },
+      // Graph Actions
+      setInitialGraph: (graph) => {
+        set({
+          graph,
+          selectedNodeId: null,
+          connectionState: { isConnecting: false },
+          contextMenuState: {
+            isVisible: false,
+            position: { x: 0, y: 0 },
+            type: "canvas",
+          },
+        });
+      },
 
-  moveNode: (nodeId, position) => set((state) => ({
-    graph: updateNodePosition(nodeId, position, state.graph)
-  })),
+      addNode: (type, position, options) => {
+        const state = get();
 
-  addEdge: (sourceNodeId, targetNodeId) => {
-    const state = get();
-    const validation = validateConnection(sourceNodeId, targetNodeId, state.graph);
-    
-    if (!validation.valid) {
-      console.warn('Connection failed:', validation.reason);
-      return false;
-    }
+        // allowMultipleInputs 결정: 옵션 → 노드 타입 설정 → 기본값 false
+        let allowMultipleInputs = false;
+        if (state.nodeTypeConfigMap) {
+          const nodeTypeConfig = state.nodeTypeConfigMap.get(type);
+          allowMultipleInputs = nodeTypeConfig?.allowMultipleInputs ?? false;
+        }
 
-    const newEdge = createEdge(sourceNodeId, targetNodeId);
-    set((state) => ({
-      graph: {
-        ...state.graph,
-        edges: [...state.graph.edges, newEdge]
-      }
-    }));
+        const newNode = createNode(type, position, allowMultipleInputs);
 
-    const updatedState = get();
-    updatedState.onConnect?.(sourceNodeId, targetNodeId, newEdge.id);
-    return true;
-  },
+        if (options?.title) {
+          newNode.title = options.title;
+        }
 
-  removeEdgeById: (edgeId) => {
-    const state = get();
-    const edge = state.graph.edges.find(e => e.id === edgeId);
-    
-    set((state) => ({
-      graph: removeEdge(edgeId, state.graph)
-    }));
-    
-    if (edge) {
-      const updatedState = get();
-      updatedState.onDisconnect?.(edge.sourceNodeId, edge.targetNodeId, edgeId);
-    }
-  },
+        const newGraph = {
+          ...state.graph,
+          nodes: [...state.graph.nodes, newNode],
+        };
 
-  setSelectedNode: (nodeId) => set({ selectedNodeId: nodeId }),
+        set({ graph: newGraph });
+        callGraphChangeCallback(newGraph, newNode);
+      },
 
-  startConnection: (sourceNodeId, position) => set({
-    connectionState: {
-      isConnecting: true,
-      sourcePort: { nodeId: sourceNodeId, type: 'output' },
-      currentPosition: position
-    }
-  }),
+      removeNodeById: (nodeId) => {
+        const currentState = get();
+        const removedNode = currentState.graph.nodes.find(
+          (node) => node.id === nodeId
+        );
+        const newGraph = removeNode(nodeId, currentState.graph);
 
-  updateConnectionPosition: (position) => set((state) => ({
-    connectionState: {
-      ...state.connectionState,
-      currentPosition: position
-    }
-  })),
+        set({
+          graph: newGraph,
+          selectedNodeId:
+            currentState.selectedNodeId === nodeId
+              ? null
+              : currentState.selectedNodeId,
+        });
 
-  completeConnection: (targetNodeId) => {
-    const state = get();
-    const sourceNodeId = state.connectionState.sourcePort?.nodeId;
-    
-    if (!sourceNodeId) return false;
+        callGraphChangeCallback(newGraph, removedNode);
+      },
 
-    const success = state.addEdge(sourceNodeId, targetNodeId);
-    
-    set({
-      connectionState: { isConnecting: false }
-    });
+      updateNode: (nodeId, updates) => {
+        const currentState = get();
+        const newGraph = {
+          ...currentState.graph,
+          nodes: currentState.graph.nodes.map((node) =>
+            node.id === nodeId ? { ...node, ...updates } : node
+          ),
+        };
 
-    return success;
-  },
+        set({ graph: newGraph });
 
-  cancelConnection: () => set({
-    connectionState: { isConnecting: false }
-  }),
+        const state = get();
+        const updatedNode = newGraph.nodes.find((node) => node.id === nodeId);
 
-  setZoom: (zoom) => set((state) => ({
-    graph: {
-      ...state.graph,
-      viewState: { ...state.graph.viewState, zoom }
-    }
-  })),
+        if (state.onNodeChange) {
+          if (updates.title !== undefined) {
+            state.onNodeChange(nodeId, "title", updates.title);
+          } else if (updates.payload !== undefined) {
+            state.onNodeChange(nodeId, "payload", updates.payload);
+          }
+        }
 
-  setOffset: (offset) => set((state) => ({
-    graph: {
-      ...state.graph,
-      viewState: { ...state.graph.viewState, offset }
-    }
-  })),
+        callGraphChangeCallback(newGraph, updatedNode);
+      },
 
-  updateViewState: (updates) => set((state) => ({
-    graph: {
-      ...state.graph,
-      viewState: { ...state.graph.viewState, ...updates }
-    }
-  })),
+      moveNode: (nodeId, position) => {
+        set((state) => ({
+          graph: updateNodePosition(nodeId, position, state.graph),
+        }));
+      },
 
-  // Callback setters
-  setOnConnect: (callback) => set({ onConnect: callback }),
-  setOnDisconnect: (callback) => set({ onDisconnect: callback }),
-  setOnNodeAdd: (callback) => set({ onNodeAdd: callback }),
-  setOnNodeRemove: (callback) => set({ onNodeRemove: callback }),
-  setOnNodeUpdate: (callback) => set({ onNodeUpdate: callback }),
-}));
+      duplicateNode: (nodeId) => {
+        const state = get();
+        const originalNode = state.graph.nodes.find(
+          (node) => node.id === nodeId
+        );
+        if (!originalNode) return;
+
+        const newNode = createNode(
+          originalNode.type,
+          {
+            x: originalNode.position.x + 50,
+            y: originalNode.position.y + 50,
+          },
+          originalNode.allowMultipleInputs
+        );
+
+        newNode.payload = { ...originalNode.payload };
+        newNode.title = originalNode.title + " (복사본)";
+
+        const newGraph = {
+          ...state.graph,
+          nodes: [...state.graph.nodes, newNode],
+        };
+
+        set({ graph: newGraph });
+        callGraphChangeCallback(newGraph, newNode);
+      },
+
+      disconnectAllFromNode: (nodeId) => {
+        const currentState = get();
+        const disconnectedNode = currentState.graph.nodes.find(
+          (node) => node.id === nodeId
+        );
+        const removedEdges = currentState.graph.edges.filter(
+          (edge) => edge.sourceNodeId === nodeId || edge.targetNodeId === nodeId
+        );
+
+        const newGraph = {
+          ...currentState.graph,
+          edges: currentState.graph.edges.filter(
+            (edge) =>
+              edge.sourceNodeId !== nodeId && edge.targetNodeId !== nodeId
+          ),
+        };
+
+        set({ graph: newGraph });
+        callGraphChangeCallback(newGraph, disconnectedNode, removedEdges);
+      },
+
+      addEdge: (sourceNodeId, targetNodeId) => {
+        const state = get();
+        const validation = validateConnection(
+          sourceNodeId,
+          targetNodeId,
+          state.graph
+        );
+
+        if (!validation.valid) {
+          console.warn("Connection failed:", validation.reason);
+          return false;
+        }
+
+        const newEdge = createEdge(sourceNodeId, targetNodeId);
+        const newGraph = {
+          ...state.graph,
+          edges: [...state.graph.edges, newEdge],
+        };
+
+        set({ graph: newGraph });
+        callGraphChangeCallback(newGraph, undefined, [newEdge]);
+        return true;
+      },
+
+      removeEdgeById: (edgeId) => {
+        const state = get();
+        const removedEdge = state.graph.edges.find(
+          (edge) => edge.id === edgeId
+        );
+        const newGraph = removeEdge(edgeId, state.graph);
+
+        set({ graph: newGraph });
+        callGraphChangeCallback(
+          newGraph,
+          undefined,
+          removedEdge ? [removedEdge] : undefined
+        );
+      },
+
+      setZoom: (zoom) =>
+        set((state) => ({
+          graph: {
+            ...state.graph,
+            viewState: { ...state.graph.viewState, zoom },
+          },
+        })),
+
+      setOffset: (offset) =>
+        set((state) => ({
+          graph: {
+            ...state.graph,
+            viewState: { ...state.graph.viewState, offset },
+          },
+        })),
+
+      updateViewState: (updates) =>
+        set((state) => ({
+          graph: {
+            ...state.graph,
+            viewState: { ...state.graph.viewState, ...updates },
+          },
+        })),
+
+      // UI Actions
+      setSelectedNode: (nodeId) => set({ selectedNodeId: nodeId }),
+
+      startConnection: (sourceNodeId, position) =>
+        set({
+          connectionState: {
+            isConnecting: true,
+            sourcePort: { nodeId: sourceNodeId, type: "output" },
+            currentPosition: position,
+          },
+        }),
+
+      updateConnectionPosition: (position) =>
+        set((state) => ({
+          connectionState: {
+            ...state.connectionState,
+            currentPosition: position,
+          },
+        })),
+
+      completeConnection: (targetNodeId) => {
+        const state = get();
+        const sourceNodeId = state.connectionState.sourcePort?.nodeId;
+
+        if (!sourceNodeId) return false;
+
+        const success = state.addEdge(sourceNodeId, targetNodeId);
+
+        set({
+          connectionState: { isConnecting: false },
+        });
+
+        return success;
+      },
+
+      cancelConnection: () =>
+        set({
+          connectionState: { isConnecting: false },
+        }),
+
+      showContextMenu: (type, position, nodeId, canvasPosition) =>
+        set(() => ({
+          contextMenuState: {
+            isVisible: true,
+            position,
+            type,
+            nodeId,
+            canvasPosition,
+          },
+        })),
+
+      hideContextMenu: () =>
+        set({
+          contextMenuState: {
+            isVisible: false,
+            position: { x: 0, y: 0 },
+            type: "canvas",
+          },
+        }),
+
+      // Callback setters
+      setNodeTypeConfigMap: (configMap) =>
+        set({ nodeTypeConfigMap: configMap }),
+      setOnNodeChange: (callback) => set({ onNodeChange: callback }),
+      setOnGraphChange: (callback) => set({ onGraphChange: callback }),
+    };
+  })
+);
+
+// 상태 선택자들 - 필요한 부분만 선택적으로 구독
+export const useGraph = () => useGraphStore((state) => state.graph);
+export const useNodes = () => useGraphStore((state) => state.graph.nodes);
+export const useEdges = () => useGraphStore((state) => state.graph.edges);
+export const useViewState = () =>
+  useGraphStore((state) => state.graph.viewState);
+export const useZoom = () =>
+  useGraphStore((state) => state.graph.viewState.zoom);
+export const useOffset = () =>
+  useGraphStore((state) => state.graph.viewState.offset);
+
+export const useSelectedNode = () =>
+  useGraphStore((state) => state.selectedNodeId);
+export const useConnectionState = () =>
+  useGraphStore((state) => state.connectionState);
+export const useContextMenuState = () =>
+  useGraphStore((state) => state.contextMenuState);
+
+// 특정 노드만 구독하는 선택자
+export const useNode = (nodeId: string) =>
+  useGraphStore((state) =>
+    state.graph.nodes.find((node) => node.id === nodeId)
+  );
+
+// 특정 노드와 연결된 엣지들만 구독
+export const useNodeEdges = (nodeId: string) =>
+  useGraphStore((state) =>
+    state.graph.edges.filter(
+      (edge) => edge.sourceNodeId === nodeId || edge.targetNodeId === nodeId
+    )
+  );
+
+// 액션들만 분리해서 사용 - 안정적인 참조를 위해 개별 선택자 사용
+export const useSetInitialGraph = () =>
+  useGraphStore((state) => state.setInitialGraph);
+export const useAddNode = () => useGraphStore((state) => state.addNode);
+export const useRemoveNodeById = () =>
+  useGraphStore((state) => state.removeNodeById);
+export const useUpdateNode = () => useGraphStore((state) => state.updateNode);
+export const useMoveNode = () => useGraphStore((state) => state.moveNode);
+export const useDuplicateNode = () =>
+  useGraphStore((state) => state.duplicateNode);
+export const useDisconnectAllFromNode = () =>
+  useGraphStore((state) => state.disconnectAllFromNode);
+export const useAddEdge = () => useGraphStore((state) => state.addEdge);
+export const useRemoveEdgeById = () =>
+  useGraphStore((state) => state.removeEdgeById);
+export const useSetZoom = () => useGraphStore((state) => state.setZoom);
+export const useSetOffset = () => useGraphStore((state) => state.setOffset);
+export const useUpdateViewState = () =>
+  useGraphStore((state) => state.updateViewState);
+
+export const useSetSelectedNode = () =>
+  useGraphStore((state) => state.setSelectedNode);
+export const useStartConnection = () =>
+  useGraphStore((state) => state.startConnection);
+export const useUpdateConnectionPosition = () =>
+  useGraphStore((state) => state.updateConnectionPosition);
+export const useCompleteConnection = () =>
+  useGraphStore((state) => state.completeConnection);
+export const useCancelConnection = () =>
+  useGraphStore((state) => state.cancelConnection);
+export const useShowContextMenu = () =>
+  useGraphStore((state) => state.showContextMenu);
+export const useHideContextMenu = () =>
+  useGraphStore((state) => state.hideContextMenu);
+
+export const useSetNodeTypeConfigMap = () =>
+  useGraphStore((state) => state.setNodeTypeConfigMap);
+export const useSetOnNodeChange = () =>
+  useGraphStore((state) => state.setOnNodeChange);
+export const useSetOnGraphChange = () =>
+  useGraphStore((state) => state.setOnGraphChange);

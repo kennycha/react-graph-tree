@@ -4,14 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a React + TypeScript + Vite project for building a web-based visual graph editor with ComfyUI as the primary UX reference. The goal is to create an editor where teams can visually compose ML analysis pipelines (detector → tracker → G/A → SF → event) as a directed acyclic graph (DAG).
-
-**ComfyUI Reference**: https://github.com/Comfy-Org/ComfyUI_frontend
+This is a React + TypeScript + Vite library project for building a web-based visual graph editor. Published as `@kennycha/react-graph-tree` on npm, it provides components for teams to visually compose node-based workflows as a directed acyclic graph (DAG).
 
 ## Current Implementation Status
 
 ✅ **Fully Implemented:**
-- ComfyUI-style visual graph editor
+- Visual graph editor with intuitive interface
 - Pan/zoom canvas with precise coordinate transformations
 - Drag-and-drop node positioning (zoom-aware)
 - Port-based connection system with curved SVG edges
@@ -19,17 +17,17 @@ This is a React + TypeScript + Vite project for building a web-based visual grap
 - Real-time connection validation and visual feedback
 - Zustand-based state management with callback system
 - TypeScript strict mode compliance
-- 10 example nodes with realistic ML pipeline data
+- Flexible node type configuration
 
 ## Key Architecture Points
 
 - **Graph Model**: Flexible DAG structure with per-node connection rules
 - **Connection Rules**: `allowMultipleInputs` boolean per node (default: 1:N, optional: N:M)
-- **Node Types**: 5 main types (Detector, Tracker, G/A, SF, Event) with type-specific colors
+- **Node Types**: Configurable node types with custom labels and colors
 - **State Management**: Zustand with callback hooks for external integration
 - **Rendering Strategy**: 
   - Nodes: DOM-based (Card components) with transform-aware drag handling
-  - Edges: Single SVG layer with ComfyUI-style curved routing
+  - Edges: Single SVG layer with curved routing
   - View transforms: CSS transform with proper coordinate conversion
 - **Tech Stack**: React 19 + TypeScript + Vite + Styled-Components + Zustand
 
@@ -39,14 +37,17 @@ This is a React + TypeScript + Vite project for building a web-based visual grap
 # Start development server
 pnpm dev
 
-# Build the project (TypeScript compilation + Vite build)
-pnpm build
+# Build library for distribution (TypeScript + Vite library build)
+pnpm build:lib
 
 # Lint the codebase
 pnpm lint
 
 # Preview production build
 pnpm preview
+
+# Publish to npm (after build:lib)
+npm publish --access public
 ```
 
 ## Implemented Features
@@ -90,10 +91,19 @@ src/
 └── main.tsx             # React entry point
 ```
 
-## Next Steps: Library Preparation
+## Library Status
 
-The codebase is ready for library conversion with:
-- Clean component architecture
-- TypeScript strict compliance
-- Callback system for external integration
-- Zero external dependencies beyond React ecosystem
+✅ **Published as npm package**: `@kennycha/react-graph-tree`
+- Clean component architecture with proper exports
+- TypeScript strict compliance with declaration files
+- Callback system for external integration  
+- Peer dependencies: react, react-dom, styled-components, zustand
+- ES/CJS module support with source maps
+- Ready for production use
+
+## Usage as Library
+
+```tsx
+import { GraphEditor } from "@kennycha/react-graph-tree";
+// See README.md for complete usage examples
+```

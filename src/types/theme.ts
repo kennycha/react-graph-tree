@@ -3,6 +3,7 @@ export interface Theme {
     primary: string;
     secondary: string;
     background: string;
+    backgroundSecondary: string;
     surface: string;
     text: string;
     textSecondary: string;
@@ -55,6 +56,7 @@ export const defaultTheme: Theme = {
     primary: '#6366f1',
     secondary: '#8b5cf6',
     background: '#1e1e1e',
+    backgroundSecondary: '#3a3a3a',
     surface: '#2d2d2d',
     text: '#ffffff',
     textSecondary: '#a1a1aa',

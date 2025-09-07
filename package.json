@@ -1,20 +1,56 @@
 {
-  "name": "tree-sample",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@kennycha/react-graph-tree",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "react",
+    "graph",
+    "editor",
+    "visualization",
+    "dag",
+    "ml-pipeline",
+    "comfyui"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kennycha/react-graph-tree.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kennycha/react-graph-tree/issues"
+  },
+  "homepage": "https://github.com/kennycha/react-graph-tree#readme",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc && vite build",
+    "build:lib": "tsc --project tsconfig.lib.json && vite build --mode library",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build:lib",
+    "example": "cd examples && pnpm install && pnpm dev",
+    "example:build": "cd examples && pnpm install && pnpm build"
   },
-  "dependencies": {
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "styled-components": "^6.1.19",
-    "zustand": "^5.0.8"
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "styled-components": ">=5.0.0",
+    "zustand": ">=4.0.0"
   },
+  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@types/react": "^19.1.10",
@@ -25,6 +61,11 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "styled-components": "^6.1.19",
+    "zustand": "^5.0.8",
+    "terser": "^5.44.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
