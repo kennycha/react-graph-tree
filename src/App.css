@@ -1,0 +1,135 @@
+/* App container styles */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #2c3e50;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Header styles */
+.app-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.app-title {
+  font-size: 2.5rem;
+  color: #ecf0f1;
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+/* Base link styles */
+.app-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+/* NPM link specific styles */
+.npm-link {
+  background-color: #e74c3c;
+}
+
+.npm-link:hover {
+  background-color: #c0392b;
+}
+
+/* GitHub link specific styles */
+.github-link {
+  background-color: #34495e;
+}
+
+.github-link:hover {
+  background-color: #2c3e50;
+}
+
+/* Main content container */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+  max-width: 1400px;
+}
+
+/* Graph container styles */
+.graph-container {
+  width: 100%;
+  max-width: 800px;
+  height: 480px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #e1e8ed;
+}
+
+/* JSON viewer styles */
+.graph-json-viewer {
+  width: 100%;
+  max-width: 800px;
+}
+
+.graph-json-viewer h2 {
+  color: #ecf0f1;
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+}
+
+.graph-json-viewer pre {
+  height: 448px;
+  margin: 0;
+}
+
+/* Responsive design */
+@media (min-width: 1201px) {
+  .main-content {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .graph-container {
+    flex: 1;
+    max-width: none;
+    width: auto;
+  }
+
+  .graph-json-viewer {
+    flex: 1;
+    max-width: none;
+  }
+
+  .graph-json-viewer pre {
+    height: 448px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 10px;
+  }
+
+  .app-title {
+    font-size: 2rem;
+  }
+
+  .graph-container {
+    height: 400px;
+  }
+
+  .main-content {
+    gap: 10px;
+  }
+}

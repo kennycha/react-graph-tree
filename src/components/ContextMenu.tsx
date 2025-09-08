@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, type FunctionComponent } from "react";
 import styled from "styled-components";
 import type {
   ContextMenuItem,
@@ -95,7 +95,7 @@ interface CanvasContextMenuProps {
   onClose: () => void;
 }
 
-export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
+export const NodeContextMenu: FunctionComponent<NodeContextMenuProps> = ({
   position,
   nodeId,
   menuItems,
@@ -225,7 +225,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
   );
 };
 
-export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
+export const CanvasContextMenu: FunctionComponent<CanvasContextMenuProps> = ({
   position,
   canvasPosition,
   menuItems,

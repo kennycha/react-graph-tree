@@ -1,4 +1,11 @@
-import React, { useRef, useCallback, useEffect, useState } from "react";
+import {
+  useRef,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+  type FunctionComponent,
+} from "react";
 import styled from "styled-components";
 import { useViewState, useUpdateViewState } from "../stores/graphStore";
 import type { Position } from "../types/graph";
@@ -44,12 +51,12 @@ const GridBackground = styled.div<{ $zoom: number; $offset: Position }>`
 `;
 
 interface GraphCanvasProps {
-  children: React.ReactNode;
+  children: ReactNode;
   onContextMenu?: (e: React.MouseEvent) => void;
   isConnecting?: boolean;
 }
 
-export const GraphCanvas: React.FC<GraphCanvasProps> = ({
+export const GraphCanvas: FunctionComponent<GraphCanvasProps> = ({
   children,
   onContextMenu,
 }) => {

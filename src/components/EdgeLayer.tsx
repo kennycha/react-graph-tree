@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo, type FunctionComponent } from "react";
 import styled from "styled-components";
 import {
   useNodes,
@@ -80,7 +80,10 @@ const getNodePortPosition = (node: Node, portType: "input" | "output") => {
   }
 };
 
-export const EdgeLayer: React.FC<EdgeLayerProps> = ({ width, height }) => {
+export const EdgeLayer: FunctionComponent<EdgeLayerProps> = ({
+  width,
+  height,
+}) => {
   const nodes = useNodes();
   const edges = useEdges();
   const connectionState = useConnectionState();

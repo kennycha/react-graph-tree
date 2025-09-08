@@ -1,9 +1,10 @@
-import React, {
+import {
   useEffect,
   useCallback,
   useState,
   useRef,
   useMemo,
+  type FunctionComponent,
 } from "react";
 import { ThemeProvider } from "styled-components";
 import { defaultTheme, type Theme } from "./types/theme";
@@ -29,6 +30,7 @@ import {
   useSetNodeTypeConfigMap,
   useSetOnGraphChange,
   useSetOnNodeChange,
+  useGraphStore,
 } from "./stores/graphStore";
 import { CanvasContextMenu, NodeContextMenu } from "./components/ContextMenu";
 import type {
@@ -47,7 +49,7 @@ export interface GraphEditorConfig {
   theme?: Partial<Theme>;
   width?: number | string;
   height?: number | string;
-  initialGraph?: RawGraph;
+  graph?: RawGraph;
   onNodeChange?: (
     nodeId: string,
     changeType: "title" | "payload" | "position",
@@ -67,7 +69,7 @@ export interface GraphEditorProps {
   height?: number | string;
 }
 
-export const GraphEditor: React.FC<GraphEditorProps> = ({
+export const GraphEditor: FunctionComponent<GraphEditorProps> = ({
   config,
   width = "100%",
   height = "100%",
@@ -111,7 +113,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     setNodeTypeConfigMap(nodeTypeConfigMap);
   }, [nodeTypeConfigMap, setNodeTypeConfigMap]);
 
-  const getNodeContextMenuItems = useCallback((): ContextMenuItem[] => {
+  const nodeContextMenuItems = useMemo((): ContextMenuItem[] => {
     if (config.defaultNodeContextMenuItems) {
       return config.defaultNodeContextMenuItems;
     }
@@ -121,8 +123,8 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
         id: "edit-title",
         label: "Edit Title",
         onClick: async (id: string) => {
-          if (config.onNodeChange) {
-            const result = config.onNodeChange(id, "title");
+          if (onNodeChangeRef.current) {
+            const result = onNodeChangeRef.current(id, "title");
             if (result instanceof Promise) {
               await result;
             }
@@ -141,9 +143,13 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
         id: "edit-payload",
         label: "Edit Properties",
         onClick: async (id: string) => {
-          if (config.onNodeChange) {
+          if (onNodeChangeRef.current) {
             const node = nodes.find((n) => n.id === id);
-            const result = config.onNodeChange(id, "payload", node?.payload);
+            const result = onNodeChangeRef.current(
+              id,
+              "payload",
+              node?.payload
+            );
             if (result instanceof Promise) {
               await result;
             }
@@ -203,7 +209,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
       },
     ];
   }, [
-    config,
+    config.defaultNodeContextMenuItems,
     nodes,
     updateNode,
     duplicateNode,
@@ -211,7 +217,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     removeNodeById,
   ]);
 
-  const getCanvasContextMenuItems = useCallback((): CanvasContextMenuItem[] => {
+  const canvasContextMenuItems = useMemo((): CanvasContextMenuItem[] => {
     if (config.canvasContextMenuItems) {
       return config.canvasContextMenuItems;
     }
@@ -276,7 +282,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     viewState.zoom,
   ]);
 
-  const createNodeTypeTheme = useCallback(() => {
+  const theme = useMemo(() => {
     const nodeTypeColors: Record<string, string> = {};
     config.nodeTypes.forEach((nodeType) => {
       nodeTypeColors[nodeType.id] = nodeType.color;
@@ -296,27 +302,39 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
   const onGraphChangeRef = useRef(config.onGraphChange);
   const onNodeChangeRef = useRef(config.onNodeChange);
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
-    if (config.initialGraph) {
-      const convertedNodes: Node[] = config.initialGraph.nodes.map(
-        (rawNode) => {
-          return {
-            ...rawNode,
-            allowMultipleInputs:
-              nodeTypeConfigMap.get(rawNode.type)?.allowMultipleInputs ?? false,
-            contextMenuItems: undefined,
-          };
-        }
-      );
+    if (config.graph) {
+      const convertedNodes: Node[] = config.graph.nodes.map((rawNode) => {
+        return {
+          ...rawNode,
+          allowMultipleInputs:
+            nodeTypeConfigMap.get(rawNode.type)?.allowMultipleInputs ?? false,
+          contextMenuItems: undefined,
+        };
+      });
 
       const convertedGraph: Graph = {
-        ...config.initialGraph,
+        ...config.graph,
         nodes: convertedNodes,
       };
 
-      setInitialGraph(convertedGraph);
+      if (isFirstRender.current) {
+        setInitialGraph(convertedGraph);
+        isFirstRender.current = false;
+      } else {
+        // Update only nodes and edges, preserve viewState and UI state
+        const currentState = useGraphStore.getState();
+        useGraphStore.setState({
+          graph: {
+            ...convertedGraph,
+            viewState: currentState.graph?.viewState,
+          },
+        });
+      }
     }
-  }, [config.initialGraph, setInitialGraph, nodeTypeConfigMap]);
+  }, [config.graph, setInitialGraph, nodeTypeConfigMap]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -471,8 +489,6 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
     [viewState, showContextMenu]
   );
 
-  const theme = createNodeTypeTheme();
-
   return (
     <ThemeProvider theme={theme}>
       <div
@@ -495,7 +511,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
               key={node.id}
               node={{
                 ...node,
-                contextMenuItems: getNodeContextMenuItems(),
+                contextMenuItems: nodeContextMenuItems,
               }}
             />
           ))}
@@ -508,7 +524,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
                 <CanvasContextMenu
                   position={contextMenuState.position}
                   canvasPosition={contextMenuState.canvasPosition}
-                  menuItems={getCanvasContextMenuItems()}
+                  menuItems={canvasContextMenuItems}
                   onClose={hideContextMenu}
                 />
               )}
@@ -516,7 +532,7 @@ export const GraphEditor: React.FC<GraphEditorProps> = ({
               <NodeContextMenu
                 position={contextMenuState.position}
                 nodeId={contextMenuState.nodeId}
-                menuItems={getNodeContextMenuItems()}
+                menuItems={nodeContextMenuItems}
                 onClose={hideContextMenu}
               />
             )}

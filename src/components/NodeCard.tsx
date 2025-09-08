@@ -1,4 +1,10 @@
-import React, { useCallback, useRef, useState } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  useEffect,
+  type FunctionComponent,
+} from "react";
 import styled from "styled-components";
 import type { Node, NodeType, Position } from "../types/graph";
 import {
@@ -96,7 +102,7 @@ interface NodeCardProps {
   node: Node;
 }
 
-export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
+export const NodeCard: FunctionComponent<NodeCardProps> = ({ node }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
@@ -189,7 +195,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
     [node.contextMenuItems, node.id, showContextMenu]
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);

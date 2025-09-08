@@ -157,8 +157,12 @@ export const useGraphStore = create<GraphStore>()(
 
       // Graph Actions
       setInitialGraph: (graph) => {
+        const currentState = get();
         set({
-          graph,
+          graph: {
+            ...graph,
+            viewState: currentState.graph?.viewState ?? graph.viewState,
+          },
           selectedNodeId: null,
           connectionState: { isConnecting: false },
           contextMenuState: {
