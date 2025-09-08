@@ -81,7 +81,6 @@ function App() {
         `Enter new payload (JSON) for ${node.title}:`,
         payloadJson
       );
-      console.log("newPayloadStr =", newPayloadStr);
       if (newPayloadStr && newPayloadStr !== payloadJson) {
         try {
           const newPayload = JSON.parse(newPayloadStr);
@@ -98,8 +97,6 @@ function App() {
       }
     }
   };
-
-  console.log("App render: currentGraph =", currentGraph);
 
   const config: GraphEditorConfig = {
     graph: currentGraph,
