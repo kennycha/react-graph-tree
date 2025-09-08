@@ -50,7 +50,7 @@ export interface GraphEditorConfig {
   initialGraph?: RawGraph;
   onNodeChange?: (
     nodeId: string,
-    changeType: "title" | "payload",
+    changeType: "title" | "payload" | "position",
     data?: unknown
   ) => void | Promise<void>;
   onGraphChange?: (

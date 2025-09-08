@@ -34,7 +34,7 @@ interface CallbackState {
   nodeTypeConfigMap?: Map<string, NodeTypeConfig>;
   onNodeChange?: (
     nodeId: string,
-    changeType: "title" | "payload",
+    changeType: "title" | "payload" | "position",
     data?: unknown
   ) => void | Promise<void>;
   onGraphChange?: (
@@ -83,7 +83,7 @@ interface CallbackActions {
   setOnNodeChange: (
     callback: (
       nodeId: string,
-      changeType: "title" | "payload",
+      changeType: "title" | "payload" | "position",
       data?: unknown
     ) => void | Promise<void>
   ) => void;
@@ -241,6 +241,11 @@ export const useGraphStore = create<GraphStore>()(
         set((state) => ({
           graph: updateNodePosition(nodeId, position, state.graph),
         }));
+
+        const state = get();
+        if (state.onNodeChange) {
+          state.onNodeChange(nodeId, "position", position);
+        }
       },
 
       duplicateNode: (nodeId) => {
