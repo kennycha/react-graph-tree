@@ -39,9 +39,9 @@ import type {
   Edge,
   Node,
   Graph,
-  RawGraph,
   NodeTypeConfig,
 } from "./types/graph";
+import { validateGraphWithNodeTypes } from "./utils/graph";
 export interface GraphEditorConfig {
   nodeTypes: NodeTypeConfig[];
   canvasContextMenuItems?: CanvasContextMenuItem[];
@@ -49,14 +49,14 @@ export interface GraphEditorConfig {
   theme?: Partial<Theme>;
   width?: number | string;
   height?: number | string;
-  graph?: RawGraph;
+  graph?: Graph;
   onNodeChange?: (
     nodeId: string,
     changeType: "title" | "payload" | "position",
     data?: unknown
   ) => void | Promise<void>;
   onGraphChange?: (
-    graph: RawGraph,
+    graph: Graph,
     node?: Node,
     edges?: Edge[]
   ) => void | Promise<void>;
@@ -306,35 +306,27 @@ export const GraphEditor: FunctionComponent<GraphEditorProps> = ({
 
   useEffect(() => {
     if (config.graph) {
-      const convertedNodes: Node[] = config.graph.nodes.map((rawNode) => {
-        return {
-          ...rawNode,
-          allowMultipleInputs:
-            nodeTypeConfigMap.get(rawNode.type)?.allowMultipleInputs ?? false,
-          contextMenuItems: undefined,
-        };
-      });
-
-      const convertedGraph: Graph = {
-        ...config.graph,
-        nodes: convertedNodes,
-      };
+      const validation = validateGraphWithNodeTypes(config.graph, config.nodeTypes);
+      if (!validation.valid) {
+        console.error("Graph validation failed:", validation.errors);
+        throw new Error(`Graph validation failed: ${validation.errors.join(', ')}`);
+      }
 
       if (isFirstRender.current) {
-        setInitialGraph(convertedGraph);
+        setInitialGraph(config.graph);
         isFirstRender.current = false;
       } else {
         // Update only nodes and edges, preserve viewState and UI state
         const currentState = useGraphStore.getState();
         useGraphStore.setState({
           graph: {
-            ...convertedGraph,
+            ...config.graph,
             viewState: currentState.graph?.viewState,
           },
         });
       }
     }
-  }, [config.graph, setInitialGraph, nodeTypeConfigMap]);
+  }, [config.graph, setInitialGraph, config.nodeTypes]);
 
   useEffect(() => {
     const updateSize = () => {

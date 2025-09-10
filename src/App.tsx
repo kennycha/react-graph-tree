@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { GraphEditor, type GraphEditorConfig } from "./GraphEditor";
-import { type RawGraph } from "./types/graph";
+import { type Graph } from "./types/graph";
 import "./App.css";
 
-const INITIAL_GRAPH: RawGraph = {
+const INITIAL_GRAPH: Graph = {
   nodes: [
     {
       id: "detector1",
@@ -11,6 +11,7 @@ const INITIAL_GRAPH: RawGraph = {
       type: "detector",
       position: { x: 50, y: 100 },
       payload: {},
+      allowMultipleInputs: false,
     },
     {
       id: "tracker1",
@@ -18,6 +19,7 @@ const INITIAL_GRAPH: RawGraph = {
       type: "tracker",
       position: { x: 400, y: 100 },
       payload: {},
+      allowMultipleInputs: false,
     },
     {
       id: "feature1",
@@ -25,6 +27,7 @@ const INITIAL_GRAPH: RawGraph = {
       type: "feature",
       position: { x: 750, y: 100 },
       payload: {},
+      allowMultipleInputs: false,
     },
     {
       id: "filter1",
@@ -32,6 +35,7 @@ const INITIAL_GRAPH: RawGraph = {
       type: "filter",
       position: { x: 750, y: 300 },
       payload: {},
+      allowMultipleInputs: false,
     },
     {
       id: "output1",
@@ -39,6 +43,7 @@ const INITIAL_GRAPH: RawGraph = {
       type: "output",
       position: { x: 1100, y: 100 },
       payload: {},
+      allowMultipleInputs: true,
     },
   ],
   edges: [
@@ -55,7 +60,7 @@ const INITIAL_GRAPH: RawGraph = {
 };
 
 function App() {
-  const [currentGraph, setCurrentGraph] = useState<RawGraph>(INITIAL_GRAPH);
+  const [currentGraph, setCurrentGraph] = useState<Graph>(INITIAL_GRAPH);
 
   // Handle title/payload updates with prompt
   const handleTitleOrPayloadChange = async (

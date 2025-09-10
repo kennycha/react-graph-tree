@@ -1,4 +1,4 @@
-import type { Graph, Node, Edge } from "../types/graph";
+import type { Graph, Node, Edge, NodeTypeConfig } from "../types/graph";
 
 export const generateId = (): string => {
   return Math.random().toString(36).slice(2, 9);
@@ -121,5 +121,36 @@ export const updateNodePosition = (
     nodes: graph.nodes.map((node) =>
       node.id === nodeId ? { ...node, position } : node
     ),
+  };
+};
+
+export const validateGraphWithNodeTypes = (
+  graph: Graph,
+  nodeTypes: NodeTypeConfig[]
+): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  const nodeTypeMap = new Map<string, NodeTypeConfig>();
+  
+  nodeTypes.forEach((nodeType) => {
+    nodeTypeMap.set(nodeType.id, nodeType);
+  });
+
+  graph.nodes.forEach((node) => {
+    const nodeTypeConfig = nodeTypeMap.get(node.type);
+    
+    if (!nodeTypeConfig) {
+      errors.push(`Node "${node.id}" has invalid type "${node.type}". Available types: ${nodeTypes.map(nt => nt.id).join(', ')}`);
+      return;
+    }
+    
+    const expectedAllowMultipleInputs = nodeTypeConfig.allowMultipleInputs ?? false;
+    if (node.allowMultipleInputs !== expectedAllowMultipleInputs) {
+      errors.push(`Node "${node.id}" (type: ${node.type}) has allowMultipleInputs=${node.allowMultipleInputs}, but should be ${expectedAllowMultipleInputs} according to its node type configuration`);
+    }
+  });
+
+  return {
+    valid: errors.length === 0,
+    errors,
   };
 };

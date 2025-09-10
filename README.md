@@ -19,28 +19,57 @@ pnpm add @kennycha/react-graph-tree
 ## Quick Start
 
 ```tsx
+import { useState } from "react";
 import { GraphEditor } from "@kennycha/react-graph-tree";
 
-const config = {
-  nodeTypes: [
-    { id: "input", label: "Input", color: "#3b82f6" },
-    { id: "process", label: "Process", color: "#10b981" },
-    { id: "transform", label: "Transform", color: "#f59e0b" },
-    { id: "filter", label: "Filter", color: "#ef4444" },
-    { id: "output", label: "Output", color: "#8b5cf6" },
+const INITIAL_GRAPH = {
+  nodes: [
+    {
+      id: "detector1",
+      title: "Detector 1",
+      type: "detector",
+      position: { x: 50, y: 100 },
+      payload: {},
+      allowMultipleInputs: false,
+    },
+    {
+      id: "output1",
+      title: "Output 1", 
+      type: "output",
+      position: { x: 400, y: 100 },
+      payload: {},
+      allowMultipleInputs: true,
+    },
   ],
-  onGraphChange: (graph, node, edges) => {
-    // ...
-  },
-  onNodeChange: (nodeId, changeType, data) => {
-    // ...
+  edges: [
+    { id: "edge1", sourceNodeId: "detector1", targetNodeId: "output1" },
+  ],
+  viewState: {
+    offset: { x: 0, y: 0 },
+    zoom: 1.0,
   },
 };
 
 function App() {
+  const [currentGraph, setCurrentGraph] = useState(INITIAL_GRAPH);
+
+  const config = {
+    graph: currentGraph,
+    nodeTypes: [
+      { id: "detector", label: "Detector", color: "red" },
+      { id: "tracker", label: "Tracker", color: "blue" },
+      { id: "feature", label: "Feature", color: "green" },
+      { id: "filter", label: "Filter", color: "purple" },
+      { id: "output", label: "Output", color: "orange", allowMultipleInputs: true },
+    ],
+    onGraphChange: (graph) => {
+      setCurrentGraph(graph);
+    },
+  };
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <GraphEditor config={config} width="100%" height="100%" />
+      <GraphEditor config={config} />
     </div>
   );
 }

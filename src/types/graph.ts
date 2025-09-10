@@ -30,15 +30,12 @@ export interface CanvasContextMenuItem {
   submenu?: CanvasContextMenuItem[];
 }
 
-export interface RawNode {
+export interface Node {
   id: string;
   type: NodeType;
   title: string;
   position: Position;
   payload: Record<string, unknown>;
-}
-
-export interface Node extends RawNode {
   allowMultipleInputs: boolean;
   contextMenuItems?: ContextMenuItem[];
 }
@@ -52,12 +49,6 @@ export interface Edge {
 export interface ViewState {
   zoom: number;
   offset: Position;
-}
-
-export interface RawGraph {
-  nodes: RawNode[];
-  edges: Edge[];
-  viewState: ViewState;
 }
 
 export interface Graph {

@@ -8,7 +8,6 @@ import type {
   ConnectionState,
   NodeType,
   ContextMenuState,
-  RawGraph,
   NodeTypeConfig,
 } from "../types/graph";
 import {
@@ -38,7 +37,7 @@ interface CallbackState {
     data?: unknown
   ) => void | Promise<void>;
   onGraphChange?: (
-    graph: RawGraph,
+    graph: Graph,
     node?: Node,
     edges?: Edge[]
   ) => void | Promise<void>;
@@ -89,7 +88,7 @@ interface CallbackActions {
   ) => void;
   setOnGraphChange: (
     callback: (
-      graph: RawGraph,
+      graph: Graph,
       node?: Node,
       edges?: Edge[]
     ) => void | Promise<void>
@@ -114,14 +113,6 @@ const defaultInitialGraph: Graph = {
 
 export const useGraphStore = create<GraphStore>()(
   subscribeWithSelector((set, get) => {
-    // Helper function to convert Graph to RawGraph
-    const convertGraphToRawGraph = (graph: Graph): RawGraph => {
-      const rawNodes = graph.nodes.map(({ ...rawNode }) => rawNode);
-      return {
-        ...graph,
-        nodes: rawNodes,
-      };
-    };
 
     // Helper function to call onGraphChange callback
     const callGraphChangeCallback = (
@@ -131,8 +122,7 @@ export const useGraphStore = create<GraphStore>()(
     ) => {
       const state = get();
       if (state.onGraphChange) {
-        const rawGraph = convertGraphToRawGraph(newGraph);
-        const result = state.onGraphChange(rawGraph, node, edges);
+        const result = state.onGraphChange(newGraph, node, edges);
         if (result instanceof Promise) {
           result.catch((error) => {
             console.error("Graph change callback error:", error);

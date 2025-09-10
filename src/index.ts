@@ -3,8 +3,6 @@ import { GraphEditor, type GraphEditorConfig } from "./GraphEditor";
 export { GraphEditor };
 export type { GraphEditorConfig };
 export type {
-  RawGraph,
-  RawNode,
   Graph,
   Node,
   Edge,

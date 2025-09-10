@@ -108,7 +108,6 @@ src/
 - **ContextMenu**: Dynamic menu system (canvas/node specific)
 
 ### Type System Architecture
-- **Raw vs Internal Types**: `RawNode`/`RawGraph` (external API) vs `Node`/`Graph` (internal)
 - **NodeTypeConfig**: Configuration-driven node type system
 - **Flexible NodeType**: String-based for dynamic node types
 - **Strict TypeScript**: All components use strict mode with comprehensive typing
